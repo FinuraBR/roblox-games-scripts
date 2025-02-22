@@ -8,14 +8,14 @@ getgenv().autocomprar = true
 
 function autocoletar()
 while getgenv().autocoletar == true do
-for _,v in pairs(workspace.Tycoons["1"].Tycoon.Penthouse1.Collectors.ATM.ZonePart:GetDescendants()) do
+for _,v in pairs(workspace.Tycoons["1"].Tycoon.Penthouse1.Collectors:GetDescendants()) do
 if v:IsA("TouchTransmitter") then
 firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v.Parent, 0) --0 is touch
-wait(0.1)
+task.wait(0.1)
 firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v.Parent, 1) -- 1 is untouch
 end
 end
-wait(0.1)
+task.wait(0.1)
 end
 end
 
@@ -24,11 +24,11 @@ while getgenv().autocomprar == true do
 for _,v in pairs(workspace.Tycoons["1"].Tycoon.Penthouse1.Buttons:GetDescendants()) do
 if v:IsA("TouchTransmitter") then
 firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v.Parent, 0) --0 is touch
-task.wait(0.1)
+task.wait()
 firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v.Parent, 1) -- 1 is untouch
 end
 end
-task.wait(0.1)
+task.wait(0.5)
 end
 end
 
