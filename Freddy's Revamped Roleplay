@@ -1,4 +1,5 @@
 -- https://www.roblox.com/games/132733938805360/ROCKSTARS-Freddys-Revamped-Roleplay
+-- para funcionar vc deve primeiro spawnar como um adulto e depois usar o script
 
 local args = {
 	{
