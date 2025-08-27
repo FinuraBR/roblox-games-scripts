@@ -16,7 +16,7 @@ local args = {
 	}
 }
 game:GetService("ReplicatedStorage"):WaitForChild("MorphCharacter"):FireServer(unpack(args))
-==============================================================================
+---------------------------------------------------------------------------------
 game:GetService("ReplicatedStorage").AwardBadge:FireServer(); -- entre os parenteses coloque o id da badge
-==============================================================================
+---------------------------------------------------------------------------------
 game:GetService("ReplicatedStorage").AddMoney:FireServer() -- entre os parenteses coloque o tanto de dinheiro q vc quer adicionar
