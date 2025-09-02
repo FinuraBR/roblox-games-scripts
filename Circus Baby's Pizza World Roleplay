@@ -1,0 +1,12 @@
+-- https://www.roblox.com/games/2122988191/Circus-Babys-Pizza-World-Roleplay
+
+-- badges
+
+for _, v in pairs(workspace.Awarders:GetDescendants()) do
+        if v:IsA("TouchTransmitter") then
+            if v.Parent and v.Parent:IsA("Part") then
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Parent.CFrame
+                task.wait(1)
+            end
+        end
+    end
