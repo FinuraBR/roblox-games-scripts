@@ -57,7 +57,7 @@ end
 local TabMain = Window:CreateTab("Main", 6034509993)
 
 TabMain:CreateButton({
-    Name = "Find All", -- fiz essa merda enquanto tava bebaço ent fds
+    Name = "Find All",
     Callback = function()
         for _,v in pairs(workspace.ToFind:GetDescendants()) do
             if v:IsA("TouchTransmitter") then
