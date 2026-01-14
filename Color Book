@@ -108,7 +108,7 @@ TabFarm:CreateToggle({
                                 itemPart.CFrame = CFrame.new(targetPos.Position)
                                 
                                 -- 4. TEMPO DE PINTURA
-                                task.wait(0.1) 
+                                task.wait(0.001) 
                                 
                                 -- 5. DEVOLVE
                                 itemPart.CFrame = originalCFrame
