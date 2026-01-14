@@ -18,74 +18,20 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
---// Aba Auto Farm (MODO: ANTI-CLIP SIZE CALCULATION)
-local TabFarm = Window:CreateTab("Auto Farm", 4483345998)
-
-TabFarm:CreateToggle({
-    Name = "Smart Bring (Auto Distance)",
-    CurrentValue = false,
-    Flag = "AutoFarmItems",
-    Callback = function(Value)
-        autoFarmEnabled = Value
-        
-        if Value then
-            task.spawn(function()
-                while autoFarmEnabled do
-                    local descendants = workspace:GetDescendants()
-                    
-                    for _, v in pairs(descendants) do
-                        if not autoFarmEnabled then break end
-
-                        if v:IsA("SelectionBox") then
-                            local itemPart = v.Parent 
-                            
-                            if itemPart and itemPart:IsA("BasePart") then
-                                -- 1. SALVA ESTADO ORIGINAL
-                                local originalCFrame = itemPart.CFrame
-                                local originalCollide = itemPart.CanCollide
-                                local originalTransparency = itemPart.Transparency
-                                
-                                -- 2. CÁLCULO DE TAMANHO (A MÁGICA)
-                                -- Pega o maior lado do objeto (X, Y ou Z) ou a diagonal (Magnitude)
-                                local partSize = itemPart.Size.Magnitude / 2
-                                
-                                -- Define a distância: Metade do tamanho do objeto + 6 studs de folga
-                                -- Isso garante que a SUPERFÍCIE do objeto fique a 6 studs da câmera
-                                local distanceToMove = partSize + 6
-                                
-                                -- 3. TRAZ O OBJETO
-                                itemPart.CanCollide = false
-                                itemPart.Transparency = 0.6 -- Mais transparente para ver através de objetos grandes
-                                
-                                -- Posiciona na frente da câmera respeitando o tamanho
-                                local targetPos = Camera.CFrame + (Camera.CFrame.LookVector * distanceToMove)
-                                itemPart.CFrame = CFrame.new(targetPos.Position) -- Reseta rotação para não bugar colisão
-                                
-                                -- 4. TEMPO DE PINTURA
-                                -- Se o objeto for muito grande, damos um tiquinho a mais de tempo
-                                task.wait(0.1) 
-                                
-                                -- 5. DEVOLVE
-                                itemPart.CFrame = originalCFrame
-                                itemPart.CanCollide = originalCollide
-                                itemPart.Transparency = originalTransparency
-                            end
-                        end
-                    end
-                    task.wait(0.5) 
-                end
-            end)
-        end
-    end,
-})
-
 --// Serviços
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
---// Variáveis globais
+--// Variáveis Principais (QUE FALTAVAM)
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+--// Variáveis de Controle
+local autoFarmEnabled = false -- Definido aqui para evitar erro
 local lastBaseplatePosition = Vector3.new(0, 2053, 0)
 local brightnessLoop = false
 local infiniteJumpEnabled = false
@@ -114,13 +60,77 @@ local function toKeyCode(k)
     return Enum.KeyCode.LeftShift
 end
 
+--// Atualiza a câmera caso o player morra/respawne
+Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+    Camera = Workspace.CurrentCamera
+end)
+
+--// Aba Auto Farm (MODO: ANTI-CLIP SIZE CALCULATION)
+local TabFarm = Window:CreateTab("Auto Farm", 4483345998)
+
+TabFarm:CreateToggle({
+    Name = "Smart Bring (Auto Distance)",
+    CurrentValue = false,
+    Flag = "AutoFarmItems",
+    Callback = function(Value)
+        autoFarmEnabled = Value
+        
+        if Value then
+            task.spawn(function()
+                while autoFarmEnabled do
+                    -- Verifica se a câmera existe antes de tentar usar
+                    if not Camera then Camera = Workspace.CurrentCamera end
+
+                    local descendants = Workspace:GetDescendants()
+                    
+                    for _, v in pairs(descendants) do
+                        if not autoFarmEnabled then break end
+
+                        if v:IsA("SelectionBox") then
+                            local itemPart = v.Parent 
+                            
+                            if itemPart and itemPart:IsA("BasePart") then
+                                -- 1. SALVA ESTADO ORIGINAL
+                                local originalCFrame = itemPart.CFrame
+                                local originalCollide = itemPart.CanCollide
+                                local originalTransparency = itemPart.Transparency
+                                
+                                -- 2. CÁLCULO DE TAMANHO
+                                local partSize = itemPart.Size.Magnitude / 2
+                                local distanceToMove = partSize + 6
+                                
+                                -- 3. TRAZ O OBJETO
+                                itemPart.CanCollide = false
+                                itemPart.Transparency = 0.6 
+                                
+                                -- Posiciona na frente da câmera (Correção aplicada aqui)
+                                local targetPos = Camera.CFrame + (Camera.CFrame.LookVector * distanceToMove)
+                                itemPart.CFrame = CFrame.new(targetPos.Position)
+                                
+                                -- 4. TEMPO DE PINTURA
+                                task.wait(0.1) 
+                                
+                                -- 5. DEVOLVE
+                                itemPart.CFrame = originalCFrame
+                                itemPart.CanCollide = originalCollide
+                                itemPart.Transparency = originalTransparency
+                            end
+                        end
+                    end
+                    task.wait(0.5) 
+                end
+            end)
+        end
+    end,
+})
+
 --// Aba Teleport
 local TabTeleport = Window:CreateTab("Teleport", 4483345998)
 
 TabTeleport:CreateButton({
     Name = "Generate Hide Place",
     Callback = function()
-        if not workspace:FindFirstChild("placefff") then
+        if not Workspace:FindFirstChild("placefff") then
             local baseplate = Instance.new("Part")
             baseplate.Name = "placefff"
             baseplate.Size = Vector3.new(2048, 1, 2048)
@@ -128,7 +138,7 @@ TabTeleport:CreateButton({
             baseplate.Anchored = true
             baseplate.CanCollide = true
             baseplate.Material = Enum.Material.Grass
-            baseplate.Parent = workspace
+            baseplate.Parent = Workspace
         end
     end,
 })
@@ -136,11 +146,10 @@ TabTeleport:CreateButton({
 TabTeleport:CreateButton({
     Name = "Teleport to Hide Place (Tween *SAFE*)",
     Callback = function()
-        local lp = Players.LocalPlayer
-        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-            lastBaseplatePosition = lp.Character.HumanoidRootPart.Position
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            lastBaseplatePosition = LocalPlayer.Character.HumanoidRootPart.Position
             local tweeninfo = TweenInfo.new(1, Enum.EasingStyle.Linear)
-            local tween = TweenService:Create(lp.Character.HumanoidRootPart, tweeninfo, {CFrame = CFrame.new(0, 2053, 0)})
+            local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, tweeninfo, {CFrame = CFrame.new(0, 2053, 0)})
             tween:Play()
         end
     end,
@@ -149,10 +158,9 @@ TabTeleport:CreateButton({
 TabTeleport:CreateButton({
     Name = "Teleport to Hide Place (Instant *RISK*)",
     Callback = function()
-        local lp = Players.LocalPlayer
-        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-            lastBaseplatePosition = lp.Character.HumanoidRootPart.Position
-            lp.Character.HumanoidRootPart.CFrame = CFrame.new(0, 2053, 0)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            lastBaseplatePosition = LocalPlayer.Character.HumanoidRootPart.Position
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 2053, 0)
         end
     end,
 })
@@ -160,9 +168,8 @@ TabTeleport:CreateButton({
 TabTeleport:CreateButton({
     Name = "Return to Last Position Before Teleport (*RISK*)",
     Callback = function()
-        local lp = Players.LocalPlayer
-        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-            lp.Character.HumanoidRootPart.CFrame = CFrame.new(lastBaseplatePosition)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(lastBaseplatePosition)
         end
     end,
 })
@@ -184,7 +191,6 @@ TabVisuals:CreateToggle({
                     Lighting.FogEnd = 100000
                     Lighting.GlobalShadows = true
                     Lighting.Technology = "Future"
-
                     Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
                     task.wait()
                 end
@@ -208,21 +214,20 @@ TabTools:CreateButton({
             return table.concat(array)
         end
 
-        local lp = Players.LocalPlayer
         local hammer = Instance.new("HopperBin")
         hammer.Name = randomString()
         hammer.BinType = 4
-        hammer.Parent = lp.Backpack
+        hammer.Parent = LocalPlayer.Backpack
 
         local cloneTool = Instance.new("HopperBin")
         cloneTool.Name = randomString()
         cloneTool.BinType = 3
-        cloneTool.Parent = lp.Backpack
+        cloneTool.Parent = LocalPlayer.Backpack
 
         local grabTool = Instance.new("HopperBin")
         grabTool.Name = randomString()
         grabTool.BinType = 2
-        grabTool.Parent = lp.Backpack
+        grabTool.Parent = LocalPlayer.Backpack
     end,
 })
 
@@ -235,15 +240,14 @@ TabTools:CreateButton({
 
 TabTools:CreateSlider({
     Name = "WalkSpeed",
-    Range = {16, 200}, -- ate 50 de speed geralmente é mais safe
+    Range = {16, 200},
     Increment = 1,
     Suffix = " WS",
     CurrentValue = 16,
     Callback = function(Value)
         savedWalkSpeed = Value
-        local lp = Players.LocalPlayer
-        if lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
-            lp.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = Value
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = Value
         end
     end,
 })
@@ -256,9 +260,8 @@ TabTools:CreateSlider({
     CurrentValue = 50,
     Callback = function(Value)
         savedJumpPower = Value
-        local lp = Players.LocalPlayer
-        if lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
-            lp.Character:FindFirstChildOfClass("Humanoid").JumpPower = Value
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = Value
         end
     end,
 })
@@ -280,9 +283,8 @@ TabTools:CreateToggle({
         sprintEnabled = Value
         if not Value and holdingSprint then
             holdingSprint = false
-            local lp = Players.LocalPlayer
-            if lp and lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
-                lp.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = savedWalkSpeed
+            if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = savedWalkSpeed
             end
         end
     end,
@@ -300,7 +302,7 @@ TabTools:CreateKeybind({
 
 TabTools:CreateSlider({
     Name = "Sprint Speed",
-    Range = {20, 200}, -- ate 50 de speed geralmente é mais safe
+    Range = {20, 200},
     Increment = 1,
     Suffix = " WS",
     CurrentValue = 50,
@@ -309,15 +311,15 @@ TabTools:CreateSlider({
     end,
 })
 
+--// Input Handling
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
     if not sprintEnabled then return end
     if input.KeyCode == sprintKey then
         holdingSprint = true
-        local lp = Players.LocalPlayer
-        if lp and lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
-            lp.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = sprintSpeed
+        if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = sprintSpeed
         end
     end
 end)
@@ -326,41 +328,36 @@ UserInputService.InputEnded:Connect(function(input, gpe)
     if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
     if input.KeyCode == sprintKey then
         holdingSprint = false
-        local lp = Players.LocalPlayer
-        if lp and lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
-            lp.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = savedWalkSpeed
+        if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = savedWalkSpeed
         end
     end
 end)
 
-Players.LocalPlayer.CharacterAdded:Connect(function(char)
+-- Listener Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+    if infiniteJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+--// Lógica Unificada de CharacterAdded (Corrige duplicações)
+LocalPlayer.CharacterAdded:Connect(function(char)
     local humanoid = char:WaitForChild("Humanoid")
+    
+    -- Aplica status salvos
     humanoid.WalkSpeed = savedWalkSpeed
     humanoid.JumpPower = savedJumpPower
+    
+    -- Verifica sprint
     if sprintEnabled and holdingSprint then
         humanoid.WalkSpeed = sprintSpeed
     end
 end)
 
-
--- Listener Infinite Jump
-UserInputService.JumpRequest:Connect(function()
-    if infiniteJumpEnabled and Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-    end
-end)
-
--- Persistência WalkSpeed e JumpPower após respawn
-Players.LocalPlayer.CharacterAdded:Connect(function(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    humanoid.WalkSpeed = savedWalkSpeed
-    humanoid.JumpPower = savedJumpPower
-end)
-
--- Aplica valores se o personagem já existir
-local lp = Players.LocalPlayer
-if lp.Character then
-    local humanoid = lp.Character:FindFirstChildOfClass("Humanoid")
+-- Aplica valores iniciais se o personagem já existir
+if LocalPlayer.Character then
+    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if humanoid then
         humanoid.WalkSpeed = savedWalkSpeed
         humanoid.JumpPower = savedJumpPower
