@@ -71,7 +71,7 @@ local TabFarm = Window:CreateTab("Auto Farm", 4483345998)
 TabFarm:CreateToggle({
     Name = "Smart Bring (Auto Distance)",
     CurrentValue = false,
-    Flag = "AutoFarmItems",
+    Flag = "AutoFarmItems", -- A Bind usa essa Flag para achar o botão
     Callback = function(Value)
         autoFarmEnabled = Value
         
@@ -103,12 +103,12 @@ TabFarm:CreateToggle({
                                 itemPart.CanCollide = false
                                 itemPart.Transparency = 0.6 
                                 
-                                -- Posiciona na frente da câmera (Correção aplicada aqui)
+                                -- Posiciona na frente da câmera
                                 local targetPos = Camera.CFrame + (Camera.CFrame.LookVector * distanceToMove)
                                 itemPart.CFrame = CFrame.new(targetPos.Position)
                                 
                                 -- 4. TEMPO DE PINTURA
-                                task.wait(0.001) 
+                                task.wait() 
                                 
                                 -- 5. DEVOLVE
                                 itemPart.CFrame = originalCFrame
@@ -117,9 +117,24 @@ TabFarm:CreateToggle({
                             end
                         end
                     end
-                    task.wait(0.5) 
+                    task.wait(1) 
                 end
             end)
+        end
+    end,
+})
+
+--// NOVA BIND ADICIONADA AQUI //--
+TabFarm:CreateKeybind({
+    Name = "Toggle Auto Farm Bind",
+    CurrentKeybind = "X",
+    HoldToInteract = false,
+    Flag = "KeybindAutoFarm",
+    Callback = function()
+        -- Pega o status atual do Toggle "AutoFarmItems" e inverte
+        if Rayfield.Flags["AutoFarmItems"] then
+            local currentValue = Rayfield.Flags["AutoFarmItems"].CurrentValue
+            Rayfield.Flags["AutoFarmItems"]:Set(not currentValue)
         end
     end,
 })
